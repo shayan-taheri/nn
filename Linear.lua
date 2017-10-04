@@ -62,9 +62,12 @@ function Linear:updateOutput(input)
       if self.output:nElement() ~= nElement then
          self.output:zero()
       end
-      self:updateAddBuffer(input)
+--      self:updateAddBuffer(input)
       self.output:addmm(0, self.output, 1, input, self.weight:t())
-      if self.bias then self.output:addr(1, self.addBuffer, self.bias) end
+--      if self.bias then self.output:addr(1, self.addBuffer, self.bias) end
+      if self.bias then
+         self.output:add(self.bias:view(1,-1):expandAs(self.output))
+      end
    else
       error('input must be vector or matrix')
    end
@@ -98,9 +101,7 @@ function Linear:accGradParameters(input, gradOutput, scale)
    elseif input:dim() == 2 then
       self.gradWeight:addmm(scale, gradOutput:t(), input)
       if self.bias then
-         -- update the size of addBuffer if the input is not the same size as the one we had in last updateGradInput
-         self:updateAddBuffer(input)
-         self.gradBias:addmv(scale, gradOutput:t(), self.addBuffer)
+           self.gradBias:add(gradOutput:sum(1))
       end
    end
 end
